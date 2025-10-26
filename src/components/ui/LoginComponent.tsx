@@ -1,11 +1,17 @@
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import * as Const from '../../common/appConstants'
+import useFacebookAuth from "../Auth/useFacebookAuth" 
 
+interface formDataType {
+  email: string
+  password: string
+  fullName: string
+}
 
 const LoginComponent = () => {
-  
-  const [formData, setFormData] = useState({
+
+  const [formData, setFormData] = useState<formDataType>({
     email: "",
     password: "",
     fullName: ""
@@ -13,6 +19,19 @@ const LoginComponent = () => {
 
   const [isLoading, setIsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login")
+  const [error, setError] = useState<string | null>(null)
+
+  const { 
+      handleFacebookLogin, 
+      isAuthenticating, 
+      isFacebookReady,
+      fbError 
+  } = useFacebookAuth({
+    setIsLoading,
+    onError: (errorMessage) => {
+      setError(errorMessage)
+    }
+  })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -20,9 +39,11 @@ const LoginComponent = () => {
     setTimeout(() => setIsLoading(false), 1000)
   }
 
-  const handleSocialLogin = (provider: "google" | "facebook") => {
+  const handleSocialLogin = async (provider: "google" | "facebook") => {
+    if(provider === "facebook") {
+      return await handleFacebookLogin()
+    }
     setIsLoading(true)
-    console.log(`Logging in with ${provider}`)
     setTimeout(() => setIsLoading(false), 1000)
   }
 
@@ -39,7 +60,6 @@ const LoginComponent = () => {
       className="min-h-screen bg-black text-white"
     >
       <div className="flex min-h-screen">
-        {/* Left Side - Sneaker Aesthetic with Animations */}
         <motion.div 
           className="hidden lg:flex lg:w-1/2 relative bg-gradient-to-br from-gray-900 to-black"
           initial={{ opacity: 0, x: -50 }}
@@ -66,20 +86,21 @@ const LoginComponent = () => {
               />
               
               <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-64">
+
                 <motion.div 
                   className="absolute inset-0 border-2 border-white/30 rounded-lg transform rotate-3"
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ delay: 0.7, duration: 0.8 }}
                 />
+
                 <motion.div 
                   className="absolute inset-4 border border-white/20 rounded-md transform -rotate-2"
                   initial={{ scale: 0.9, opacity: 0 }}
                   animate={{ scale: 1, opacity: 1 }}
                   transition={{ delay: 0.9, duration: 0.8 }}
                 />
-                
-                {/* Original sneaker design elements */}
+
                 <div className="absolute top-4 left-8 w-24 h-32 bg-gradient-to-br from-white/10 to-white/5 rounded-lg transform rotate-12"></div>
                 <div className="absolute bottom-8 right-8 w-28 h-20 bg-gradient-to-br from-red-500/30 to-orange-500/20 rounded-full transform -rotate-6"></div>
                 <div className="absolute top-12 left-16 flex space-x-1">
@@ -88,7 +109,6 @@ const LoginComponent = () => {
                   ))}
                 </div>
                 
-                {/* APEX Branding - Moved back to original position */}
                 <motion.div 
                   className="absolute bottom-12 left-12 transform -rotate-12"
                   initial={{ opacity: 0, scale: 0.8 }}
@@ -100,7 +120,6 @@ const LoginComponent = () => {
                 </motion.div>
               </div>
 
-              {/* Floating elements with animations */}
               <motion.div
                 className="absolute top-20 right-20 w-6 h-6 border border-white/20 rounded-full"
                 animate={{ 
@@ -148,7 +167,6 @@ const LoginComponent = () => {
             </motion.div>
           </div>
 
-          {/* Animated background blobs */}
           <motion.div 
             className="absolute top-0 left-0 w-64 h-64 bg-red-500 rounded-full blur-3xl opacity-10"
             animate={{
@@ -168,7 +186,6 @@ const LoginComponent = () => {
             transition={{ duration: 8, repeat: Infinity, delay: 1 }}
           />
 
-          {/* Bottom text */}
           <motion.div 
             className="absolute bottom-12 left-12 max-w-xs"
             initial={{ opacity: 0, y: 30 }}
@@ -182,7 +199,6 @@ const LoginComponent = () => {
           </motion.div>
         </motion.div>
 
-        {/* Right Side - Form with Animations */}
         <div className="w-full lg:w-1/2 flex items-center justify-center px-4 py-12 lg:py-0">
           <motion.div 
             className="w-full max-w-md"
@@ -190,7 +206,7 @@ const LoginComponent = () => {
             initial="hidden"
             animate="visible"
           >
-            {/* Login/Signup Tabs */}
+
             <motion.div variants={Const.itemVariants} className="mb-6">
               <div className="flex bg-gray-900 rounded-lg p-1">
                 <motion.button
@@ -220,7 +236,6 @@ const LoginComponent = () => {
               </div>
             </motion.div>
 
-            {/* Social Login Buttons */}
             <motion.div variants={Const.itemVariants} className="space-y-3 mb-6">
               <motion.button
                 onClick={() => handleSocialLogin("google")}
@@ -252,15 +267,12 @@ const LoginComponent = () => {
               </motion.button>
             </motion.div>
 
-            {/* Rest of the form remains the same... */}
-            {/* Divider */}
             <motion.div variants={Const.itemVariants} className="my-6 flex items-center gap-4">
               <div className="flex-1 h-px bg-gray-700"></div>
               <span className="text-gray-500 text-sm">OR</span>
               <div className="flex-1 h-px bg-gray-700"></div>
             </motion.div>
 
-            {/* Manual Login Form */}
             <AnimatePresence mode="wait">
               <motion.form
                 key={activeTab}

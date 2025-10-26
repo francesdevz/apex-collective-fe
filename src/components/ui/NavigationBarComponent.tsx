@@ -8,22 +8,16 @@ import { useNavigate } from "react-router-dom"
 import logo from '../../../public/logo.png'
 import * as Const from '../../common/appConstants';
 
-// Define the props for the NavigationBar component
 interface NavigationBarProps {
   authenticated?: boolean
   token?: string | null
   refreshToken?: string | null
 }
 
-
-/**
- * NavigationBar component with smooth animations
- */
 const NavigationBar: React.FC<NavigationBarProps> = (props) => {
 
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState("")
-
 
   return (
     <AnimatePresence>
