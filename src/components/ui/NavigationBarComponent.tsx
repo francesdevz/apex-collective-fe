@@ -1,66 +1,142 @@
-"use client"
-
 import type React from "react"
 import { useState } from "react"
-import Heart from "../../common/svg/Heart"
-import UserIcon from "../../common/svg/UserIcon"
-import Bag from "../../common/svg/BagIcon"
-import Logo from "../../common/svg/Logo"
+import { motion, AnimatePresence } from "framer-motion"
+import Heart from "../svg/Heart"
+import UserIcon from "../svg/UserIcon"
+import Bag from "../svg/BagIcon"
+import { useNavigate } from "react-router-dom"
+import logo from '../../../public/logo.png'
+import * as Const from '../../common/appConstants';
 
+// Define the props for the NavigationBar component
 interface NavigationBarProps {
   authenticated?: boolean
   token?: string | null
   refreshToken?: string | null
 }
 
+
+/**
+ * NavigationBar component with smooth animations
+ */
 const NavigationBar: React.FC<NavigationBarProps> = (props) => {
 
+  const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState("")
 
+
   return (
-      <nav className="w-full bg-white">
-        <div className="border-b border-gray-200" style={{paddingTop: '20px'}}>  
-          <div className="flex justify-between items-center h-14">
-            <div className="flex items-center" style={{marginLeft: '38px'}}>
-              <Logo/>
+    <AnimatePresence>
+      <motion.nav 
+        className="w-full bg-white d-flex"
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        variants={Const.navVariants}
+      >
+        <div className="border-b border-gray-200">  
+          <div className="flex justify-between items-center mt-5">
+            {/* Logo */}
+            <motion.div 
+              className="ms-[30px] mb-2"
+              initial="hidden"
+              animate="visible"
+              whileHover="hover"
+              variants={Const.logoVariants}
+            >
+              <motion.img 
+                src={logo} 
+                alt="Apex Collective Logo" 
+                style={{ width: '75px', height: '65px' }} 
+                onClick={() => navigate('/')}
+                className="cursor-pointer"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              />
+            </motion.div>
+
+            {/* Navigation Links */}
+            <div className="flex items-center w-[450px] justify-between ms-[230px]">
+              {Const.navibarOptions.map((item, index) => (
+                <motion.button
+                  key={item}
+                  className="text-sm tracking-wide font-medium text-gray-600 hover:text-black cursor-pointer transition-all duration-300 relative"
+                  initial="hidden"
+                  animate="visible"
+                  variants={Const.navItemVariants}
+                  custom={index}
+                  whileHover={{ 
+                    y: -2,
+                    color: "#000000"
+                  }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {item}
+                  <motion.div 
+                    className="absolute bottom-0 left-0 w-0 h-0.5 bg-black"
+                    whileHover={{ width: "100%" }}
+                    transition={{ duration: 0.3 }}
+                  />
+                </motion.button>
+              ))}            
             </div>
-            <div className="flex items-center w-[400px] justify-between">
-              <button className="font-serif font-medium tracking-wide hover:text-gray-600 transition-color cursor-pointer">
-                Shoes
-              </button>          
-              <button className="font-serif font-medium tracking-wide hover:text-gray-600 transition-color cursor-pointer">
-                Clothing
-              </button>   
-              <button className="font-serif font-medium tracking-wide hover:text-gray-600 transition-color cursor-pointer">
-                Accessories
-              </button>   
-              <button className="font-serif font-medium tracking-wide hover:text-gray-600 transition-color cursor-pointer">
-                Sports
-              </button>  
-              <button className="font-serif font-medium tracking-wide hover:text-gray-600 transition-color cursor-pointer">
-                Contact
-              </button>
-            </div>
-             <div className="flex items-center justify-around " style={{ width: '400px'}}>
-              <form className="relative flex flex-row">
-                <input
-                    type="text"
-                    placeholder="Search"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="bg-none px-2 border-b border-gray-300 focus:outline-none focus:border-black"
-                    style={{ width: '200px' }}
-                  />          
-              </form>    
+
+            {/* Search and Icons */}
+            <div className="flex items-center justify-around" style={{ width: '400px' }}>
+              {/* Search Input */}
+              <motion.form className="relative flex flex-row">
+                <motion.input
+                  type="text"
+                  placeholder="Search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="bg-none px-2 border-b border-gray-300 focus:outline-none focus:border-black transition-colors duration-300"
+                  style={{ width: '200px' }}
+                  initial="hidden"
+                  animate="visible"
+                  variants={Const.searchVariants}
+                  whileFocus={{ 
+                    width: 220,
+                    borderColor: "#000000"
+                  }}
+                />          
+              </motion.form>    
+
+              {/* Icons */}
               <div className="flex justify-between" style={{ width: '120px' }}>
-                <UserIcon/>
-                <Heart/>  
-                <Bag/>
+                <motion.div
+                  initial="hidden"
+                  animate="visible"
+                  whileHover="hover"
+                  whileTap="tap"
+                  variants={Const.iconVariants}
+                >
+                  <UserIcon/>
+                </motion.div>
+                <motion.div
+                  initial="hidden"
+                  animate="visible"
+                  whileHover="hover"
+                  whileTap="tap"
+                  variants={Const.iconVariants}
+                >
+                  <Heart/>  
+                </motion.div>
+                <motion.div
+                  initial="hidden"
+                  animate="visible"
+                  whileHover="hover"
+                  whileTap="tap"
+                  variants={Const.iconVariants}
+                >
+                  <Bag bagCount={0}/>
+                </motion.div>
               </div>
             </div>          
           </div>
         </div>
-      </nav>
+      </motion.nav>
+    </AnimatePresence>
   )
 }
 
