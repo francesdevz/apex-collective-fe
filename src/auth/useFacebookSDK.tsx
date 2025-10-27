@@ -1,6 +1,5 @@
-// src/hooks/useFacebookSDK.ts
 import { useEffect, useState } from 'react';
-import type { FacebookSDK } from '../../common/Types/FacebookTypes/facebook';
+import type { FacebookSDK } from '../common/Types/FacebookTypes/facebook';
 
 const useFacebookSDK = () => {
   const [fb, setFb] = useState<FacebookSDK | null>(null);

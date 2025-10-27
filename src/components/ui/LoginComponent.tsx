@@ -1,7 +1,8 @@
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import * as Const from '../../common/appConstants'
-import useFacebookAuth from "../Auth/useFacebookAuth" 
+import useFacebookAuth from "../../auth/useFacebookAuth" 
+import ApiService from "../../ApiService/ApiService"
 
 interface formDataType {
   email: string
@@ -35,6 +36,8 @@ const LoginComponent = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+   const data = ApiService.getInstance().post("/api/auth/register", formData);
+   console.log(data)
     setIsLoading(true)
     setTimeout(() => setIsLoading(false), 1000)
   }

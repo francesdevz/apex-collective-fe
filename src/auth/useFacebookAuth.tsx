@@ -6,9 +6,9 @@ import type {
     BackendAuthResponse,
     FacebookLoginData,
     UseFacebookAuthProps,
-} from '../../common/Types/FacebookTypes/types';
+} from '../common/Types/FacebookTypes/types';
 
-import type { FacebookLoginResponse } from '../../common/Types/FacebookTypes/facebook';
+import type { FacebookLoginResponse } from '../common/Types/FacebookTypes/facebook';
 
 export const useFacebookAuth = ({ setIsLoading, onSuccess, onError }: UseFacebookAuthProps) => {
 
