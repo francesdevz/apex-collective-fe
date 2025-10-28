@@ -1,4 +1,4 @@
-import { message } from "../../common/appConstants";
+import { message } from "../../Utils/appConstants";
 import { useState } from "react";
 
 interface CartProps {

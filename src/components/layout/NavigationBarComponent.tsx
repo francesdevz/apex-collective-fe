@@ -6,15 +6,23 @@ import UserIcon from "../svg/UserIcon"
 import Bag from "../svg/BagIcon"
 import { useNavigate } from "react-router-dom"
 import logo from '../../../public/logo.png'
-import * as Const from '../../common/appConstants';
+import * as Const from '../../Utils/appConstants';
 
-interface NavigationBarProps {
-  authenticated?: boolean
-  token?: string | null
-  refreshToken?: string | null
-}
-
-const NavigationBar: React.FC<NavigationBarProps> = (props) => {
+/**
+ * NavigationBar - A responsive and animated navigation component for the e-commerce application
+ * 
+ * @component
+ * @description Provides main navigation with logo, menu items, search functionality, and user action icons
+ * Features smooth animations using Framer Motion and responsive design
+ * 
+ * @example
+ * ```tsx
+ * <NavigationBar />
+ * ```
+ * 
+ * @returns {JSX.Element} Rendered navigation bar with animated elements
+ */
+const NavigationBar: React.FC = () => {
 
   const navigate = useNavigate()
   const [searchQuery, setSearchQuery] = useState("")

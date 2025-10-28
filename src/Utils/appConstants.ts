@@ -1,4 +1,4 @@
-import * as Types from './Types/FacebookTypes/types';
+import * as Types from '../Types/FacebookTypes/types';
 import type { Variants } from "framer-motion"
 
 // Messages
