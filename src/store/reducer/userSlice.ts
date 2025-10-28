@@ -2,22 +2,24 @@
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit'
 import type { PayloadAction } from '@reduxjs/toolkit'
 import ApiService from "../../ApiService/ApiService"
+import * as types from '../../Types/index'
 
 interface UserState {
   fullName: string 
   email: string 
   password: string 
-  loading: boolean
-  error: string | null
 }
 
-const initialState: UserState = {
+interface initialStates extends types.CommonTypes, UserState {};
+
+const initialState: initialStates = {
   fullName: "", 
   email: "",    
-  password: "", 
-  loading: false,
-  error: null
-}
+  password: "",
+  isLoading: false,
+  errorMessage: null,
+  successMessage: null
+} 
 
 export const fetchUserData = createAsyncThunk(
   'user/fetchUserData',
@@ -41,27 +43,27 @@ export const userSlice = createSlice({
       state.password = action.payload
     },
     setIsLoading: (state, action: PayloadAction<boolean>) => {
-      state.loading = action.payload
+      state.isLoading = action.payload
     },
     setError: (state, action: PayloadAction<string | null>) => {
-      state.error = action.payload
+      state.errorMessage = action.payload
     }
   },
   extraReducers: (builder) => {
     builder
       .addCase(fetchUserData.pending, (state) => {
-        state.loading = true
-        state.error = null
+        state.isLoading = true
+        state.errorMessage = null
       })
       .addCase(fetchUserData.fulfilled, (state, action) => {
-        state.loading = false
+        state.isLoading = false
         state.fullName = "" 
         state.email = ""
         state.password = ""
       })
       .addCase(fetchUserData.rejected, (state, action) => {
-        state.loading = false
-        state.error = action.error.message || 'Registration failed'
+        state.isLoading = false
+        state.errorMessage = action.error.message || 'Registration failed'
       })
   }
 })
