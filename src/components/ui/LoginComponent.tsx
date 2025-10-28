@@ -1,58 +1,89 @@
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import * as Const from '../../common/appConstants'
-import useFacebookAuth from "../../auth/useFacebookAuth" 
-import ApiService from "../../ApiService/ApiService"
+import * as Const from '../../Utils/appConstants'
+import useFacebookAuth from "../auth/useFacebookAuth" 
+import { connect } from "react-redux";
+import {  setFullName, 
+          setPassword, 
+          setEmail, 
+          fetchUserData, 
+          setIsLoading, 
+          setError } from "../../store/reducer/userSlice"
+import * as types from '../../Types/index'
 
-interface formDataType {
-  email: string
-  password: string
-  fullName: string
-}
 
-const LoginComponent = () => {
-
-  const [formData, setFormData] = useState<formDataType>({
-    email: "",
-    password: "",
-    fullName: ""
-  })
-
-  const [isLoading, setIsLoading] = useState(false)
-  const [activeTab, setActiveTab] = useState<"login" | "signup">("login")
-  const [error, setError] = useState<string | null>(null)
+/**
+ * LoginComponent - A dynamic authentication component supporting both login and signup flows
+ * 
+ * @component
+ * @param {types.LoginComponentProps} props - Component props containing user state and actions
+ * @param {string} props.fullName - User's full name from Redux state
+ * @param {string} props.email - User's email from Redux state
+ * @param {string} props.password - User's password from Redux state
+ * @param {boolean} props.loading - Loading state from Redux
+ * @param {string | null} props.error - Error message from Redux
+ * @param {Function} props.setFullName - Action to update full name in Redux
+ * @param {Function} props.setEmail - Action to update email in Redux
+ * @param {Function} props.setPassword - Action to update password in Redux
+ * @param {Function} props.fetchUserData - Async action to submit user registration
+ * @param {Function} props.setIsLoading - Action to set loading state
+ * @param {Function} props.setError - Action to set error message
+ * 
+ * @example
+ * ```tsx
+ * <LoginComponent 
+ *   fullName="John Doe"
+ *   email="john@example.com"
+ *   password="password123"
+ *   loading={false}
+ *   error={null}
+ *   setFullName={setFullName}
+ *   setEmail={setEmail}
+ *   setPassword={setPassword}
+ *   fetchUserData={fetchUserData}
+ *   setIsLoading={setIsLoading}
+ *   setError={setError}
+ * />
+ * ```
+ * 
+ * @returns {JSX.Element} Rendered login/signup component with animated UI
+ */
+const LoginComponent = (props: types.LoginComponentProps) => {
 
   const { 
-      handleFacebookLogin, 
-      isAuthenticating, 
-      isFacebookReady,
-      fbError 
-  } = useFacebookAuth({
-    setIsLoading,
-    onError: (errorMessage) => {
-      setError(errorMessage)
-    }
-  })
+          fullName, email, password, setIsLoading, setError,
+          setFullName, setEmail, setPassword, fetchUserData ,
+          loading, error
+        } = props
+
+  const [activeTab, setActiveTab] = useState<"login" | "signup">("login")
+
+  const { handleFacebookLogin } = useFacebookAuth({
+          setIsLoading,
+          onError: (errorMessage: any) => {
+            setError(errorMessage)
+          }
+      })
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-   const data = ApiService.getInstance().post("/api/auth/register", formData);
-   console.log(data)
-    setIsLoading(true)
-    setTimeout(() => setIsLoading(false), 1000)
+    if (activeTab === "signup") {
+        await fetchUserData({ fullName, email, password })
+    }
   }
 
   const handleSocialLogin = async (provider: "google" | "facebook") => {
     if(provider === "facebook") {
       return await handleFacebookLogin()
     }
-    setIsLoading(true)
-    setTimeout(() => setIsLoading(false), 1000)
   }
 
   const switchTab = (tab: "login" | "signup") => {
     setActiveTab(tab)
   }
+
+
+  console.log(props)
 
   return (
     <motion.div
@@ -242,7 +273,7 @@ const LoginComponent = () => {
             <motion.div variants={Const.itemVariants} className="space-y-3 mb-6">
               <motion.button
                 onClick={() => handleSocialLogin("google")}
-                disabled={isLoading}
+                disabled={loading}
                 className="cursor-pointer w-full flex items-center justify-center gap-3 bg-white text-black hover:bg-gray-100 font-semibold py-3 rounded-lg transition-colors disabled:opacity-50"
                 whileHover={{ scale: 1.02, y: -1 }}
                 whileTap={{ scale: 0.98 }}
@@ -258,7 +289,7 @@ const LoginComponent = () => {
 
               <motion.button
                 onClick={() => handleSocialLogin("facebook")}
-                disabled={isLoading}
+                disabled={loading}
                 className="cursor-pointer w-full flex items-center justify-center gap-3 bg-blue-600 text-white hover:bg-blue-700 font-semibold py-3 rounded-lg transition-colors disabled:opacity-50"
                 whileHover={{ scale: 1.02, y: -1 }}
                 whileTap={{ scale: 0.98 }}
@@ -300,9 +331,9 @@ const LoginComponent = () => {
                       id="fullName"
                       type="text"
                       placeholder="John Doe"
-                      value={formData.fullName}
+                      value={fullName}
                       required
-                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                      onChange={(e) => setFullName(e.target.value)}
                       className="w-full px-4 py-3 bg-gray-900 border border-gray-700 text-white placeholder-gray-500 rounded-lg focus:outline-none focus:border-white transition-colors"
                       whileFocus={{ scale: 1.01 }}
                     />
@@ -317,8 +348,8 @@ const LoginComponent = () => {
                     id="email"
                     type="email"
                     placeholder="your@email.com"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     required
                     className="w-full px-4 py-3 bg-gray-900 border border-gray-700 text-white placeholder-gray-500 rounded-lg focus:outline-none focus:border-white transition-colors"
                     whileFocus={{ scale: 1.01 }}
@@ -333,8 +364,8 @@ const LoginComponent = () => {
                     id="password"
                     type="password"
                     placeholder="••••••••"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value})}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     required
                     className="w-full px-4 py-3 bg-gray-900 border border-gray-700 text-white placeholder-gray-500 rounded-lg focus:outline-none focus:border-white transition-colors"
                     whileFocus={{ scale: 1.01 }}
@@ -366,14 +397,14 @@ const LoginComponent = () => {
 
                 <motion.button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={loading}
                   className="w-full bg-white text-black hover:bg-gray-100 font-semibold py-3 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
-                  whileHover={{ scale: isLoading ? 1 : 1.02, y: isLoading ? 0 : -1 }}
+                  whileHover={{ scale: loading ? 1 : 1.02, y: loading ? 0 : -1 }}
                   whileTap={{ scale: 0.98 }}
-                  animate={isLoading ? { opacity: [1, 0.7, 1] } : {}}
-                  transition={isLoading ? { duration: 1, repeat: Infinity } : {}}
+                  animate={loading ? { opacity: [1, 0.7, 1] } : {}}
+                  transition={loading ? { duration: 1, repeat: Infinity } : {}}
                 >
-                  {isLoading 
+                  {loading 
                     ? "Please wait..." 
                     : activeTab === "login" 
                       ? "Member Login" 
@@ -429,4 +460,21 @@ const LoginComponent = () => {
   )
 }
 
-export default LoginComponent
+const mapStateToProps = (state: any) => ({
+  fullName: state.user.fullName,
+  email: state.user.email,
+  password: state.user.password,
+  loading: state.user.loading,
+  error: state.user.error
+})
+
+const mapDispatchToProps = {
+  setFullName,
+  setEmail,
+  setPassword,
+  fetchUserData,
+  setIsLoading,
+  setError
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(LoginComponent);

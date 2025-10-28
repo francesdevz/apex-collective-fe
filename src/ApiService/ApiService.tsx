@@ -86,8 +86,8 @@ class ApiService {
     return this.service.get<T>(url, config);
   }
 
-  public post<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
-    return this.service.post<T>(url, data, config);
+  public async post<T>(url: string, data?: unknown): Promise<AxiosResponse<T>> {
+    return await this.service.post<T>(url, data);
   }
 
   public put<T>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<AxiosResponse<T>> {
