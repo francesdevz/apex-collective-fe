@@ -15,6 +15,8 @@ export interface UserActions {
   fetchUserData: (formData: { fullName: string; email: string; password: string }) => void
   setIsLoading: (isLoading: boolean) => void
   setError: (error: string | null) => void
+  setTokens: (tokens: { accessToken: string; refreshToken: string, user?: any }) => void
+  verifyUser: (credentials: { email: string; password: string }) => Promise<any>
 }
 
 export interface LoginComponentProps extends UserState, UserActions {}

@@ -1,17 +1,10 @@
-// store/sagas/rootSaga.ts
-import { all } from 'redux-saga/effects'
-import { 
-  watchRefreshToken, 
-  watchVerifyToken, 
-  watchAuthError,
-  watchPeriodicVerification 
-} from './tokenSagas'
+import { all, fork } from 'redux-saga/effects'
+import { authRootSaga } from './tokenSagas'
 
 export function* rootSaga() {
+  console.log('Root saga starting...');
   yield all([
-    watchRefreshToken(),
-    watchVerifyToken(),
-    watchAuthError(),
-    watchPeriodicVerification(),
-  ])
+    fork(authRootSaga)
+  ]);
+  console.log('All sagas started');
 }

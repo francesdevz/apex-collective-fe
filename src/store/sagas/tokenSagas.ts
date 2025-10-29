@@ -1,5 +1,4 @@
-// store/sagas/tokenSagas.ts
-import { call, put, takeEvery, takeLatest, delay, race, take, select } from 'redux-saga/effects'
+import { call, put, takeEvery, delay, select, fork, take, race } from 'redux-saga/effects'
 import { 
   refreshTokenStart, 
   refreshTokenSuccess, 
@@ -7,7 +6,8 @@ import {
   verifyTokenStart,
   verifyTokenSuccess,
   verifyTokenFailure,
-  logout
+  logout,
+  startPeriodicVerification
 } from '../reducer/authSlice'
 import ApiService from '../../ApiService/ApiService'
 import type { RootState } from '../store'
@@ -17,49 +17,30 @@ import type { RootState } from '../store'
  */
 function* refreshTokenSaga(): Generator<any, void, any> {
   try {
-    const refreshToken = localStorage.getItem('refreshToken')
+    const refreshToken = localStorage.getItem('refreshToken');
     
     if (!refreshToken) {
-      yield put(refreshTokenFailure('No refresh token available'))
-      return
+      yield put(refreshTokenFailure('No refresh token available'));
+      return;
     }
-
-    // Make refresh token API call
     const response = yield call(
       ApiService.getInstance().post,
-      `${import.meta.env.VITE_API_BASE_URL}/auth/refresh`,
+      '/auth/refresh', 
       { refreshToken }
-    )
-
-    const { accessToken, refreshToken: newRefreshToken } = response.data
-
-    // Update localStorage
-    localStorage.setItem('accessToken', accessToken)
-    if (newRefreshToken) {
-      localStorage.setItem('refreshToken', newRefreshToken)
-    }
-
-    // Update Redux state
+    );
+    const { accessToken, refreshToken: newRefreshToken } = response;
     yield put(refreshTokenSuccess({ 
       accessToken, 
       refreshToken: newRefreshToken 
-    }))
-
-    console.log('Token refreshed successfully')
-
+    }));
+    console.log('✅ Token refreshed successfully');
   } catch (error: any) {
-    console.error('Token refresh failed:', error)
-    
-    // Clear tokens on failure
-    localStorage.removeItem('accessToken')
-    localStorage.removeItem('refreshToken')
-    
+    console.error('❌ Token refresh failed:', error);
     yield put(refreshTokenFailure(
-      error.response?.data?.message || 'Token refresh failed'
-    ))
+      error.message || 'Token refresh failed'
+    ));
     
-    // Auto-logout on refresh failure
-    yield put(logout())
+    yield put(logout());
   }
 }
 
@@ -68,71 +49,36 @@ function* refreshTokenSaga(): Generator<any, void, any> {
  */
 function* verifyTokenSaga(): Generator<any, void, any> {
   try {
-    const token = localStorage.getItem('accessToken')
-    
+    const apiService = ApiService.getInstance();
+    const token = localStorage.getItem('accessToken');
+  
     if (!token) {
-      yield put(verifyTokenFailure('No token available'))
-      return
+      yield put(verifyTokenFailure('No token available'));
+      return;
     }
-
-    // Verify token with backend
+    
     const response = yield call(
-      ApiService.getInstance().get,
-      `${import.meta.env.VITE_API_BASE_URL}/auth/verify`,
+      [apiService, apiService.get], 
+      '/auth/login/verify',
       {
         headers: { Authorization: `Bearer ${token}` }
       }
-    )
+    );
+    
+    console.log('📨 API Response data:', response);
 
-    if (response.data.valid) {
-      yield put(verifyTokenSuccess())
+    if (response.valid) {
+      yield put(verifyTokenSuccess());
     } else {
-      yield put(verifyTokenFailure('Token is invalid'))
+      yield put(verifyTokenFailure('Token is invalid'));
+      yield put(logout());
     }
 
   } catch (error: any) {
     yield put(verifyTokenFailure(
-      error.response?.data?.message || 'Token verification failed'
-    ))
-  }
-}
-
-/**
- * Worker Saga: Handle 401 errors and auto-refresh
- * This replaces your axios interceptor logic
- */
-function* handleAuthErrorSaga(action: any): Generator<any, void, any> {
-  const { error, originalRequest } = action.payload
-
-  try {
-    // Start token refresh
-    yield put(refreshTokenStart())
-    
-    // Wait for refresh to complete with timeout
-    const { refreshSuccess, refreshFailure, timeout } = yield race({
-      refreshSuccess: take('auth/refreshTokenSuccess'),
-      refreshFailure: take('auth/refreshTokenFailure'),
-      timeout: delay(10000) // 10 second timeout
-    })
-
-    if (refreshSuccess) {
-      // Retry original request with new token
-      const token = localStorage.getItem('accessToken')
-      if (token && originalRequest.headers) {
-        originalRequest.headers.Authorization = `Bearer ${token}`
-      }
-      
-      // You might want to retry the original API call here
-      console.log('Token refreshed, retrying request...')
-      
-    } else if (refreshFailure || timeout) {
-      console.error('Token refresh failed or timed out')
-      yield put(logout())
-    }
-
-  } catch (error) {
-    console.error('Auth error handling failed:', error)
-    yield put(logout())
+      error.response?.data?.message || error.message || 'Token verification failed'
+    ));
+    yield put(logout());
   }
 }
 
@@ -140,28 +86,96 @@ function* handleAuthErrorSaga(action: any): Generator<any, void, any> {
  * Worker Saga: Periodic token verification
  */
 function* periodicTokenVerificationSaga(): Generator<any, void, any> {
+  console.log('🔄 Periodic token verification saga STARTED');
+  
+  let checkCount = 0;
+  
   while (true) {
-    yield delay(5 * 60 * 1000) 
-    const isAuthenticated = yield select((state: RootState) => state.auth.isAuthenticated)
+    yield delay(30 * 1000); 
+    checkCount++;
+    const isAuthenticated = yield select((state: RootState) => state.auth.isAuthenticated);
     if (isAuthenticated) {
-      yield put(verifyTokenStart())
+      yield put(verifyTokenStart());
+    } else {
+      break; 
     }
   }
 }
 
-// Watcher Sagas
+/**
+ * Worker Saga: Initialize all auth processes
+ */
+function* initializeAuthSagasSaga(): Generator<any, void, any> {
+  try {
+    yield put(verifyTokenStart());
+    yield put(startPeriodicVerification());
+  } catch (error) {
+    console.error('❌ Failed to initialize auth processes:', error);
+  }
+}
+
+/**
+ * Worker Saga: Handle 401 errors and auto-refresh
+ */
+function* handleAuthErrorSaga(action: any): Generator<any, void, any> {
+  try {
+
+    // Start token refresh
+    yield put(refreshTokenStart());
+    
+    // Wait for refresh to complete with timeout
+    const { refreshSuccess, refreshFailure, timeout } = yield race({
+      refreshSuccess: take('auth/refreshTokenSuccess'),
+      refreshFailure: take('auth/refreshTokenFailure'),
+      timeout: delay(10000) // 10 second timeout
+    });
+
+    if (refreshSuccess) {
+        // TODO: Retry the original failed request here if needed
+    } else if (refreshFailure || timeout) {
+      yield put(logout());
+    }
+
+  } catch (error) {
+    yield put(logout());
+  }
+}
+
+function* startPeriodicVerificationOnLoad(): Generator<any, void, any> {
+  const isAuthenticated = yield select((state: RootState) => state.auth.isAuthenticated);
+  console.log('📱 App load - isAuthenticated:', isAuthenticated);
+  if (isAuthenticated) {
+    console.log('📱 Starting periodic verification on app load');
+    yield fork(periodicTokenVerificationSaga);
+  }
+}
+
 export function* watchRefreshToken() {
-  yield takeEvery('auth/refreshTokenStart', refreshTokenSaga)
+  yield takeEvery('auth/refreshTokenStart', refreshTokenSaga);
 }
 
 export function* watchVerifyToken() {
-  yield takeEvery('auth/verifyTokenStart', verifyTokenSaga)
+  yield takeEvery('auth/verifyTokenStart', verifyTokenSaga);
 }
 
 export function* watchAuthError() {
-  yield takeEvery('API_AUTH_ERROR', handleAuthErrorSaga)
+  yield takeEvery('API_AUTH_ERROR', handleAuthErrorSaga);
 }
 
-export function* watchPeriodicVerification() {
-  yield takeEvery('auth/periodicVerificationStart', periodicTokenVerificationSaga)
+export function* watchInitializeAuthSagas() {
+  yield takeEvery('auth/initializeAuthSagas', initializeAuthSagasSaga);
+}
+
+export function* watchStartPeriodicVerification() {
+  yield takeEvery('auth/startPeriodicVerification', periodicTokenVerificationSaga);
+}
+
+export function* authRootSaga() {
+  console.log('🔑 Auth root saga started');
+  yield fork(startPeriodicVerificationOnLoad);
+  yield fork(watchRefreshToken);
+  yield fork(watchVerifyToken);
+  yield fork(watchAuthError);
+  yield fork(watchInitializeAuthSagas);
+  yield fork(watchStartPeriodicVerification);
 }

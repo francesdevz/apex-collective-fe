@@ -20,11 +20,7 @@ export const useFacebookAuth = ({ setIsLoading, onSuccess, onError }: UseFaceboo
   const authenticateWithBackend = async (data: FacebookLoginData): Promise<BackendAuthResponse> => {
     try {
       const response = await ApiService.getInstance().post("/api/auth/facebook", data);
-      if (!response.statusText || response.status < 200 || response.status >= 300) {
-        const errorText = await response.statusText;
-        throw new Error(`HTTP ${response.status}: ${errorText}`);
-      }
-      return await response.request;
+      return response as BackendAuthResponse;
     } catch (error) {
       throw new Error(`Backend authentication failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }

@@ -10,7 +10,9 @@ import {  setFullName,
           setIsLoading, 
           setError } from "../../store/reducer/userSlice"
 import * as types from '../../Types/index'
-
+import { setTokens, verifyUser } from "../../store/reducer/authSlice";
+import { initializeAuthSagas } from "../../store/reducer/authSlice";
+import { useDispatch } from "react-redux";
 
 /**
  * LoginComponent - A dynamic authentication component supporting both login and signup flows
@@ -33,7 +35,7 @@ import * as types from '../../Types/index'
  * ```tsx
  * <LoginComponent 
  *   fullName="John Doe"
- *   email="john@example.com"
+ *   email="john@example.com" 
  *   password="password123"
  *   loading={false}
  *   error={null}
@@ -49,11 +51,11 @@ import * as types from '../../Types/index'
  * @returns {JSX.Element} Rendered login/signup component with animated UI
  */
 const LoginComponent = (props: types.LoginComponentProps) => {
-
+  const dispatch = useDispatch();
   const { 
           fullName, email, password, setIsLoading, setError,
           setFullName, setEmail, setPassword, fetchUserData ,
-          loading, error
+          loading, error, setTokens, verifyUser
         } = props
 
   const [activeTab, setActiveTab] = useState<"login" | "signup">("login")
@@ -69,7 +71,12 @@ const LoginComponent = (props: types.LoginComponentProps) => {
     e.preventDefault()
     if (activeTab === "signup") {
         await fetchUserData({ fullName, email, password })
+        return;
     }
+    const data = await verifyUser({ email, password }).then(res => res.payload)
+    console.log(data)
+    setTokens({ accessToken: data.accessToken, refreshToken: data.refreshToken })
+    dispatch(initializeAuthSagas())
   }
 
   const handleSocialLogin = async (provider: "google" | "facebook") => {
@@ -81,9 +88,6 @@ const LoginComponent = (props: types.LoginComponentProps) => {
   const switchTab = (tab: "login" | "signup") => {
     setActiveTab(tab)
   }
-
-
-  console.log(props)
 
   return (
     <motion.div
@@ -474,7 +478,9 @@ const mapDispatchToProps = {
   setPassword,
   fetchUserData,
   setIsLoading,
-  setError
+  setError,
+  setTokens,
+  verifyUser
 }
 
 export default connect(mapStateToProps, mapDispatchToProps)(LoginComponent);
