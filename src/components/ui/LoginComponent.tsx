@@ -74,9 +74,10 @@ const LoginComponent = (props: types.LoginComponentProps) => {
         return;
     }
     const data = await verifyUser({ email, password }).then(res => res.payload)
-    console.log(data)
-    setTokens({ accessToken: data.accessToken, refreshToken: data.refreshToken })
-    dispatch(initializeAuthSagas())
+    if(data) {
+      setTokens({ accessToken: data?.accessToken, refreshToken: data?.refreshToken })
+      dispatch(initializeAuthSagas())
+    }
   }
 
   const handleSocialLogin = async (provider: "google" | "facebook") => {

@@ -25,7 +25,7 @@ export const fetchUserData = createAsyncThunk(
   'user/fetchUserData',
   async (formData: { fullName: string; email: string; password: string }) => {
     const response = await ApiService.getInstance().post('/api/auth/register', formData)
-    return response.data
+    return response
   }
 )
 

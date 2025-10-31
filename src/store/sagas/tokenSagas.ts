@@ -33,7 +33,6 @@ function* refreshTokenSaga(): Generator<any, void, any> {
       accessToken, 
       refreshToken: newRefreshToken 
     }));
-    console.log('✅ Token refreshed successfully');
   } catch (error: any) {
     console.error('❌ Token refresh failed:', error);
     yield put(refreshTokenFailure(
@@ -65,8 +64,6 @@ function* verifyTokenSaga(): Generator<any, void, any> {
       }
     );
     
-    console.log('📨 API Response data:', response);
-
     if (response.valid) {
       yield put(verifyTokenSuccess());
     } else {
